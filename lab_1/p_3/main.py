@@ -14,7 +14,7 @@ class MethodError(Exception):
 def zendel_method(alpha_norma, beta, alpha):
     x_old = beta.copy()
     x_new = [0 for _ in range(len(beta))]
-    epsilon_k_fst = alpha_norma / (1 - alpha_norma)
+    epsilon_k_fst = 1
     cnt_iteration = 0
     while True:
         x_new = [0 for _ in range(len(beta))]
@@ -43,7 +43,7 @@ def zendel_method(alpha_norma, beta, alpha):
 def simple_iterations_aux(alpha_norma, beta, alpha):
     x_old = beta.copy()
     x_new = [0 for _ in range(len(beta))]
-    epsilon_k_fst = alpha_norma / (1 - alpha_norma)
+    epsilon_k_fst = 1
     cnt_iteration = 0
     while True:
         x_new = [0 for _ in range(len(beta))]
@@ -85,8 +85,8 @@ def simple_iteraions(matrix, b):
             tmp += abs(alpha[i][j])
         alpha_norma = max(tmp, alpha_norma)
 
-    if alpha_norma >= 1:
-        raise MethodError
+    # if alpha_norma >= 1:
+        # raise MethodError("Alpha >= 1, alpha = {}".format(alpha_norma))
 
     simple_iterations_aux(alpha_norma, beta, alpha)
     print()

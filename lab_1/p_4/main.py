@@ -78,8 +78,10 @@ def spin_method(A):
         epsilon_k = sqrt(epsilon_k)
         if epsilon_k < epsilon:
             break
-    eigenvalues = [round(A_new[i][i], 3) for i in range(n)]
-    eigenvectors = [[round(eigenvectors[i][j], 3) for j in range(n)] for i in range(n)]
+
+    eigenvalues = [round(A_new[i][i], 2) for i in range(n)]
+    eigenvectors = [[round(eigenvectors[i][j], 4) for j in range(n)] for i in range(n)]
+
     return eigenvalues, eigenvectors
 
 
@@ -97,4 +99,12 @@ if __name__ == "__main__":
         for line in m:
             matrix.append(list(map(int, line.split())))
 
-    print(spin_method(matrix))
+    eigenvalues, eigenvectors = spin_method(matrix)
+    print("eigenvalues:")
+    print(eigenvalues)
+    print("eigenvectors")
+    for i in range(len(eigenvectors)):
+        print("h{} = ".format(i), end='')
+        for j in range(len(eigenvectors)):
+            print("{0:.3f}".format(eigenvectors[j][i]), end=" ")
+        print()
