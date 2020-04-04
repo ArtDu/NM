@@ -111,4 +111,5 @@ if __name__ == "__main__":
     with open(b_file) as m:
         b = list(map(int, m.read().split()))
 
+    print("epsilon = {}\n".format(epsilon))
     simple_iteraions(matrix, b)

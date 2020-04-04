@@ -1,90 +1,114 @@
 import sys
 import numpy as np
-from math import pi, atan, cos, sin, sqrt
+from numpy.linalg import norm, eig
+from matrix import Matrix, Vector
 
-epsilon = 0.01
+eps = 0.01
 
+def numpy_eig(matrix, my_values):
+    print("My eigenvalues:")
+    print(my_values)
 
-class MatrixError(Exception):
-    pass
-
-
-class MethodError(Exception):
-    pass
-
-
-def matrix_product(A, B):
-    n1 = len(A)
-    m1 = len(A[0])
-    n2 = len(B)
-    m2 = len(B[0])
-    if m1 != n2:
-        raise MatrixError("Matrix product error")
-    result = [[0 for _ in range(m2)] for _ in range(n1)]
-    for i in range(n1):
-        for k in range(m2):
-            for j in range(m1):
-                result[i][k] += A[i][j] * B[j][k]
-    return result
+    a = np.array(matrix.get_data())
+    eig_np = eig(a)
+    print("Numpy eigenvalues:")
+    print(eig_np[0].round(3))
 
 
-def QR_decompostion(A):
-    n = len(A)
-    v = [0 for _ in range(n)]
-    A_tmp = A.copy()
+def sign(x):
+    return -1 if x < 0 else 1 if x > 0 else 0
 
-    Q = [[0 if i != j else 1 for i in range(n)] for j in range(n)]
 
-    for i in range(n - 1):
-        norma = 0
-        for j in range(i, n):
-            norma += (A_tmp[j][i]) ** 2
-        norma = sqrt(norma)
-        v = [0 for _ in range(n)]
-        v[i] = A_tmp[i][i] + np.sign(A_tmp[i][i]) * norma
-        for j in range(i + 1, n):
-            v[j] = A_tmp[j][i]
+def householder(a, sz, k):
+    v = np.zeros(sz)
+    a = np.array(a.get_data())
+    v[k] = a[k] + sign(a[k]) * norm(a[k:])
+    for i in range(k + 1, sz):
+        v[i] = a[i]
+    v = v[:, np.newaxis]
+    H = np.eye(sz) - (2 / (v.T @ v)) * (v @ v.T)
+    return Matrix.from_list(H.tolist())
 
-        H = [[0 if i != j else 1 for i in range(n)] for j in range(n)]
 
-        lower = 0
-        for i in range(n):
-            lower += v[i] * v[i]
+def get_QR(A):
+    sz = len(A)
+    Q = Matrix.identity(sz)
+    A_i = Matrix(A)
 
-        for i in range(n):
-            for j in range(n):
-                upper = v[i] * v[j]
-                H[i][j] -= 2 * (upper / lower)
+    for i in range(sz - 1):
+        col = A_i.get_column(i)
+        H = householder(col, len(A_i), i)
+        Q = Q.multiply(H)
+        A_i = H.multiply(A_i)
 
-        Q = matrix_product(Q, H)
+    return Q, A_i
 
-        A_tmp = matrix_product(H, A_tmp)
-        A_tmp = [[round(A_tmp[i][j], 2) for j in range(n)] for i in range(n)]
 
-    return Q, A_tmp
+def get_roots(A, i):
+    sz = len(A)
+    a11 = A[i][i]
+    a12 = A[i][i + 1] if i + 1 < sz else 0
+    a21 = A[i + 1][i] if i + 1 < sz else 0
+    a22 = A[i + 1][i + 1] if i + 1 < sz else 0
+    return np.roots((1, -a11 - a22, a11 * a22 - a12 * a21))
 
-def QR_method(A):
-    A_tmp = A.copy()
+
+def finish_iter_for_complex(A, eps, i):
+    Q, R = get_QR(A)
+    A_next = R.multiply(Q)
+    lambda1 = get_roots(A, i)
+    lambda2 = get_roots(A_next, i)
+    return True if abs(lambda1[0] - lambda2[0]) <= eps and \
+                   abs(lambda1[1] - lambda2[1]) <= eps else False
+
+
+def get_eigenvalue(A, eps, i):
+    A_i = Matrix(A)
     while True:
+        Q, R = get_QR(A_i)
+        A_i = R.multiply(Q)
+        a = np.array(A_i.get_data())
+        if norm(a[i + 1:, i]) <= eps:
+            res = (a[i][i], False, A_i)
+            break
+        elif norm(a[i + 2:, i]) <= eps and finish_iter_for_complex(A_i, eps, i):
+            res = (get_roots(A_i, i), True, A_i)
+            break
+    return res
 
-        Q, R = QR_decompostion(A_tmp)
-        A_tmp = matrix_product(R, Q)
 
-        # epsilon_real() and epsilon_complex()
+def QR_method(A, eps):
+    res = Vector()
+    i = 0
+    A_i = Matrix(A)
+    while i < len(A):
+        eigenval = get_eigenvalue(A_i, eps, i)
+        if eigenval[1]:
+            res.extend(eigenval[0])
+            i += 2
+        else:
+            res.append(eigenval[0])
+            i += 1
+        A_i = eigenval[2]
+    return res, i
 
-if __name__ == "__main__":
 
-    if len(sys.argv) != 3:
-        print("use {} <matrix_file> <b_file>")
+if __name__ == '__main__':
+
+    if len(sys.argv) != 2:
+        print("use {} <matrix_file>")
         exit(0)
 
     matrix_file = sys.argv[1]
-    b_file = sys.argv[2]
 
-    matrix = []
+    data = []
     with open(matrix_file) as m:
         for line in m:
-            matrix.append(list(map(int, line.split())))
+            data.append(list(map(int, line.split())))
 
-    Q, R = QR_decompostion(matrix)
-    print(Q, R)
+    A = Matrix()
+    A.data = data
+
+    print("epsilon = {}\n".format(eps))
+    tmp, count_iter = QR_method(A, eps)
+    numpy_eig(A, tmp)

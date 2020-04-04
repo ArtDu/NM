@@ -99,6 +99,7 @@ if __name__ == "__main__":
         for line in m:
             matrix.append(list(map(int, line.split())))
 
+    print("epsilon = {}\n".format(epsilon))
     eigenvalues, eigenvectors = spin_method(matrix)
     print("eigenvalues:")
     print(eigenvalues)
