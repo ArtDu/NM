@@ -16,7 +16,7 @@ def tma(matrix, d, shape):
     return x[:-1]
 
 
-def spline(x, y):
+def spline(x, y, output):
     size = len(x)
     h = [x[i] - x[i - 1] for i in range(1, size)]
     mtrx = [[0, 2 * (h[0] + h[1]), h[1]]]
@@ -27,6 +27,9 @@ def spline(x, y):
         b.append(3 * ((y[i + 2] - y[i + 1]) / h[i + 1] - (y[i + 1] - y[i]) / h[i]))
     mtrx.append([h[-2], 2 * (h[-2] + h[-1]), 0])
     b.append(3 * ((y[-1] - y[-2]) / h[-1] - (y[-2] - y[-3]) / h[-2]))
+    with open(output, 'w') as f:
+        for i in range(len(mtrx)):
+            f.write(f'{mtrx[i][0]}c{i+1} + {mtrx[i][1]}c{i+2} + {mtrx[i][2]}c{i+3} = {round(b[i],4)}\n')
     c = tma(mtrx, b, size - 2)
     a = []
     b = []
@@ -82,7 +85,7 @@ def main():
     y = [f(i) for i in x]
     # '''
 
-    coef = spline(x, y)
+    coef = spline(x, y, args.output)
 
     x1 = np.linspace(x[0], x[-1], 50)
     y1 = [pol(x, i, coef) for i in x1]
@@ -96,7 +99,7 @@ def main():
     for i in x:
         print(pol(x, i, coef))
 
-    with open(args.output, 'w') as f:
+    with open(args.output, 'a') as f:
         f.write(f'x = {x}\ny = {y}\n\n')
         f.write(f'a = {coef[0]}\nb = {coef[1]}\nc = {coef[2]}\nd = {coef[3]}\n')
         f.write(f'\nf({x_test}) = {round(res, 4)}\n')

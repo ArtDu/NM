@@ -9,9 +9,17 @@ def get_points(file_name):
     return x, y, x_test
 
 
-def first_der(x, y, x0, k):
+def first_der(x, y, x0, k, output):
     num1 = (y[k + 1] - y[k]) / (x[k + 1] - x[k])
-    num2 = (y[k + 2] - y[k + 1]) / (x[k + 2] - x[k + 1]) - num1
+    num2 = (y[k + 2] - y[k + 1]) / (x[k + 2] - x[k + 1])
+    with open(output, 'w') as f:
+        f.write(f'y({x0}) = ({y[k + 1]} - {y[k]})/'
+                f'({x[k + 1]} - {x[k]})'
+                f' = {round(num1,4)}\n')
+        f.write(f'y({x0}) = ({y[k + 2]} - {y[k + 1]})/'
+                f'({x[k + 2]} - {x[k + 1]})'
+                f' = {round(num2,4)}\n')
+    num2 = num2 - num1
     num2 = num2 / (x[k + 2] - x[k])
     return num1 + num2 * (2 * x0 - x[k] - x[k + 1])
 
@@ -36,9 +44,9 @@ def main():
             break
         k += 1
 
-    res1 = first_der(x, y, x_test, k)
+    res1 = first_der(x, y, x_test, k, args.output)
     res2 = second_der(x, y, k)
-    with open(args.output, 'w') as f:
+    with open(args.output, 'a') as f:
         f.write(f"f'({x_test}) = {round(res1, 5)}\n")
         f.write(f"f''({x_test}) = {round(res2, 5)}\n")
 
