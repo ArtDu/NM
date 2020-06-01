@@ -94,7 +94,7 @@ class BiCGStab:
         k_mtrx = spilu(self.matrix)
         r0 = self.b - self.matrix @ self.x0
         x0 = self.x0
-        r2 = r0 #r_tilda
+        r2 = r0  # r_tilda
         p = r0
         while True:
             if r0 @ r2 == 0:
@@ -131,7 +131,6 @@ class BiCGStab:
         f.close()
         return x
 
-
     def print_solution(self):
         start = time()
         x = self.solve()
@@ -161,8 +160,7 @@ def main():
     parser.add_argument('--output', required=True, help='Output file')
     parser.add_argument('--log', help='Log file')
     parser.add_argument('--eps', type=float, help='Epsilon', default=1e-2)
-    parser.add_argument('--diag', help='If matrix is diag', \
-                        action='store_true')
+    parser.add_argument('--diag', help='If matrix is diag', action='store_true')
     args = parser.parse_args()
 
     matrix, b = get_matrix(args.input, args.diag)
@@ -170,6 +168,7 @@ def main():
     solver = BiCGStab(matrix, b, output_file=args.output,
                       log_file=args.log, eps=args.eps)
     solver.print_solution()
+
 
 if __name__ == "__main__":
     main()
