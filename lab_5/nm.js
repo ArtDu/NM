@@ -1,6 +1,6 @@
 function solve(a, b, c, alpha, beta, gamma, delta, x, h, t, thau, scheme, approx) {
     function psi(x) {
-        return x + Math.sin(Math.PI * x);
+        return Math.sin(x);
     }
 
     function f(x, t) {
@@ -9,11 +9,11 @@ function solve(a, b, c, alpha, beta, gamma, delta, x, h, t, thau, scheme, approx
 
 
     function phi0(t) {
-        return 0;
+        return Math.exp((c - a) * t);
     }
 
     function phi1(t) {
-        return 1;
+        return Math.exp((c - a) * t);
     }
 
 
@@ -283,7 +283,7 @@ function tridiagonal(a, b, c, d) {
 }
 
 function exact(x, t) {
-    return x + Math.exp(-Math.PI * Math.PI * 2 * t) * Math.sin(Math.PI * x);
+    return Math.exp((c - a) * t) * Math.sin(x);
 
 }
 
