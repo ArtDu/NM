@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru" dir="ltr" xmlns:v-on="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <title>Лаборатная работа по численным методам #5</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container-layout">
+    <div class="container-param">
+        <img src="obs.bmp">
+        <p>Вариант 2.</p>
+        <img src="my.png">
+
+        <div>
+            <p> Параметры уравнения </p>
+
+            <div>
+                <label for="a">a</label>
+                <input class="param_input" type="number" step="0.01" id="a">
+                <label for="b">b</label>
+                <input class="param_input" type="number" step="0.01" id="b">
+                <label for="c">c</label>
+                <input class="param_input" type="number" step="0.01" id="c">
+            </div>
+            <div>
+                <label for="alpha">α</label>
+                <input class="param_input" type="number" step="0.01" id="alpha">
+                <label for="beta">β</label>
+                <input class="param_input" type="number" step="0.01" id="beta">
+                <label for="gamma">γ</label>
+                <input class="param_input" type="number" step="0.01" id="gamma">
+                <label for="delta">δ</label>
+                <input class="param_input" type="number" step="0.01" id="delta">
+            </div>
+            <p> Параметры разбиения </p>
+            <div>
+                <label for="l">l</label>
+                <input class="param_input" type="number" step="0.01" id="l">
+                <label for="T">T</label>
+                <input class="param_input" type="number" step="0.01" id="T">
+                <label for="N">N</label>
+                <input class="param_input" type="number" id="N">
+                <label for="K">K</label>
+                <input class="param_input" type="number" id="K">
+            </div>
+            <div>
+                Выбор схемы
+                <select id="methodSelect">
+                    <option value="1" selected="selected">Явная</option>
+                    <option value="2">Неявная</option>
+                    <option value="3">Кранка - Николсона</option>
+                </select>
+            </div>
+            <div>
+                Выбор метода аппроксимации
+                <select id="approxSelect">
+                    <option value="1" selected="selected">Двухточечная с первым порядком</option>
+                    <option value="2">Двухточечная со вторым порядком</option>
+                    <option value="3">Трёхточечная со вторым порядком</option>
+                </select>
+            </div>
+
+            <button onclick="solve_problem()">Вычислить</button>
+
+
+        </div>
+        <div id="sigma"></div>
+    </div>
+
+    <div class="container-graph">
+        <div id="graph">
+
+        </div>
+
+        <div id="graphError" style="display: none"></div>
+        <div class="slidercontainer">
+            <label for="plotSlider">Выбор промежутка времени. t = <span id="currValueT">0</span></label>
+            <input type="range" oninput="plotResults(this.value)" min="1" max="100" value="50" class="slider"
+                   id="plotSlider">
+        </div>
+        <button onclick="changeGraph()" class="graph-error-button">Отобразить следующий график</button>
+
+    </div>
+</div>
+</body>
+
+
+<script src="plotly-latest.min.js"></script>
+<script src="nm.js"></script>
+<script type="text/javascript">
+    let ans = null;
+
+    // парметры задачи
+    let a = 2, b = 0, c = 0;
+    let alpha = 0, beta = 1, gamma = 0, delta = 1;
+
+    let l = 1; // в каких пределах меняется x
+    let T = 1; // максимальное t для которого будет производится расчёт
+
+    let theta = 0; // параметр решения
+    // в явной схеме -- равен 1
+    // в неявной -- 0
+    // в схеме Кранка - Николсона -- 1/2
+
+    // параметры разбиения
+    let N = 5; // по пространству (х)
+    let K = 400; // по времени (t) // стоит брать частое разбиение, чтобы явный метод лучше сходился
+
+    document.getElementById('a').value = a;
+    document.getElementById('b').value = b;
+    document.getElementById('c').value = c;
+    document.getElementById('alpha').value = alpha;
+    document.getElementById('beta').value = beta;
+    document.getElementById('gamma').value = gamma;
+    document.getElementById('delta').value = delta;
+    document.getElementById('l').value = l;
+    document.getElementById('T').value = T;
+    document.getElementById('N').value = N;
+    document.getElementById('K').value = K;
+    Plotly.plot('graph', [{x: [], y: []}]); // пустой график
+    Plotly.plot('graphError', [{x: [], y: []}]); // пустой график
+
+    // подсчитываемые значения
+    let h = null;
+    let x = null;
+    let tau = null;
+    let t = null;
+    let maxStep = null;
+
+    function solve_problem() {
+        a = parseFloat(document.getElementById('a').value);
+        b = parseFloat(document.getElementById('b').value);
+        c = parseFloat(document.getElementById('c').value);
+        alpha = parseFloat(document.getElementById('alpha').value);
+        beta = parseFloat(document.getElementById('beta').value);
+        gamma = parseFloat(document.getElementById('gamma').value);
+        delta = parseFloat(document.getElementById('delta').value);
+        l = parseFloat(document.getElementById('l').value);
+        T = parseFloat(document.getElementById('T').value);
+
+        N = parseInt(document.getElementById('N').value);
+        K = parseInt(document.getElementById('K').value);
+
+        h = l / N;   // пространственный шаг
+        x = arange(0, l + h, h);
+
+        tau = T / K; // временной шаг
+        t = arange(0, T + tau, tau);
+
+
+        // схема и аппроксимация
+        let field = document.getElementById("methodSelect");
+        let calc_method = parseInt(field.options[field.selectedIndex].value);
+        field = document.getElementById("approxSelect");
+        let approx = parseInt(field.options[field.selectedIndex].value);
+
+        console.log(calc_method, approx);
+        ans = null;
+        ans = solve(a, b, c, alpha, beta, gamma, delta, x, h, t, tau, calc_method, approx);
+        console.log(ans);
+
+        maxStep = K;
+
+        document.getElementById("plotSlider").min = 0;
+        document.getElementById("plotSlider").max = maxStep;
+        document.getElementById("plotSlider").value = 0;
+        //  по умолчанию показывать решение на первом шаге по времени
+        plotResults(0);
+
+    }
+
+    function plotResults(currStep) {
+
+        document.getElementById("currValueT").textContent = t[currStep];
+        let first_plot = {
+            x: x,
+            y: ans[currStep],
+            name: "Приближение"
+        };
+
+        let solved = analytic_solve(x, t[currStep], a, b, c);
+
+        let second_plot = {
+            x: x,
+            y: solved,
+            name: "Точное решение"
+        };
+        let plotData = [first_plot, second_plot];
+        let layout = {title: {text: 'График решения'}};
+        Plotly.newPlot('graph', plotData, layout);
+
+        let error_plot = {
+            x: x,
+            y: get_diff(solved, ans[currStep]),
+        };
+        layout = {title: {text: 'График абсолютной ошибки'}};
+        Plotly.newPlot('graphError', [error_plot], layout);
+    }
+
+    function changeGraph() {
+        let element = document.getElementById('graphError');
+        element.style.display = element.style.display === 'none' ? '' : 'none';
+        element = document.getElementById('graph');
+        element.style.display = element.style.display === 'none' ? '' : 'none';
+    }
+</script>
+
+</html>
